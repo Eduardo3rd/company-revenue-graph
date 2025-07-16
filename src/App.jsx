@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
+// Interactive Company Growth Chart - Deployed via GitHub Pages
 // Company data - year by year values in billions USD
 const companiesData = {
   // Hardware Companies (Revenue)
