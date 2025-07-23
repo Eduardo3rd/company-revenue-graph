@@ -41,9 +41,10 @@ const App = () => {
   const [companiesData, setCompaniesData] = useState({});
   const [companyCategories, setCompanyCategories] = useState({});
   const [isLogScale, setIsLogScale] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Papa.parse('/company_revenue_data_detailed.csv', {
+    Papa.parse('./company_revenue_data_detailed.csv', {
       download: true,
       header: true,
       complete: (results) => {
@@ -63,6 +64,7 @@ const App = () => {
         });
         setCompaniesData(newData);
         setCompanyCategories(newCategories);
+        setIsLoading(false);
       }
     });
   }, []);
@@ -92,8 +94,8 @@ const App = () => {
     });
   }, [companiesData]);
 
-  const hardwareCompanies = Object.keys(companiesData).filter(c => companyCategories[c] === 'Hardware');
-  const softwareCompanies = Object.keys(companiesData).filter(c => companyCategories[c] === 'Software/AI');
+  const hardwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Hardware'), [companiesData, companyCategories]);
+  const softwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Software/AI'), [companiesData, companyCategories]);
   const hardwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(hardwareCompanies.map(c => [c, d[c]])) }));
   const softwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(softwareCompanies.map(c => [c, d[c]])) }));
 
@@ -189,6 +191,8 @@ const App = () => {
   const chartMargins = isMobile 
     ? { top: 20, right: 15, left: 50, bottom: 60 }
     : { top: 20, right: 30, left: 70, bottom: 80 };
+
+  if (isLoading) return <div>Loading data...</div>;
 
   return (
     <div style={containerStyle}>
