@@ -24,10 +24,15 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Papa.parse('./company_revenue_data_detailed.csv', {
+    Papa.parse('/company_revenue_data_detailed.csv', {
       download: true,
       header: true,
       complete: (results) => {
+        if (results.errors.length > 0) {
+          console.error('CSV parsing errors:', results.errors);
+          setIsLoading(false);
+          return;
+        }
         const data = results.data;
         const newData = {};
         const newCategories = {};
@@ -44,6 +49,10 @@ const App = () => {
         });
         setCompaniesData(newData);
         setCompanyCategories(newCategories);
+        setIsLoading(false);
+      },
+      error: (error) => {
+        console.error('PapaParse error:', error);
         setIsLoading(false);
       }
     });
@@ -197,7 +206,7 @@ const App = () => {
     ? { top: 20, right: 15, left: 50, bottom: 60 }
     : { top: 20, right: 30, left: 70, bottom: 80 };
 
-  if (isLoading) return <div>Loading data...</div>;
+  if (isLoading) return <div>Loading data... (If this persists, check console for errors)</div>;
 
   return (
     <div style={containerStyle}>
