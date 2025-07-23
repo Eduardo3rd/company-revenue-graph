@@ -166,7 +166,11 @@ const App = () => {
     minHeight: '100vh',
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
     backgroundColor: '#f8f9fa',
-    position: 'relative'
+    position: 'relative',
+    width: '100vw',
+    margin: 0,
+    padding: 0,
+    boxSizing: 'border-box'
   };
 
   const chartSectionStyle = { flex: isMobile ? 1 : 3, padding: isMobile ? '15px' : '20px', order: isMobile ? 2 : 1 };
