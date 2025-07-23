@@ -1,57 +1,36 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, ReferenceDot, Label } from 'recharts';
+import Papa from 'papaparse';
 
 // Interactive Company Growth Chart - Live on GitHub Pages
 // Company data - year by year values in billions USD
-const companiesData = {
-  // Hardware Companies (Revenue)
-  'Xiaomi': [0.00, 0.85, 2.00, 5.20, 12.50, 12.50, 10.00, 18.00, 25.40, 29.80, 37.80, 50.90, 41.50, 38.20, 51.60],
-  'Block': [0.00, 0.00, 0.04, 0.20, 0.55, 0.85, 1.26, 1.71, 2.21, 3.30, 4.71, 9.50, 17.66, 17.53, 21.92, 24.12],
-  'Tesla': [0.00, 0.01, 0.05, 0.12, 0.07, 0.02, 0.11, 0.12, 0.20, 0.41, 2.01, 3.20, 4.05, 7.00, 11.76, 21.46],
-  'Beats': [0.00, 0.00, 0.03, 0.15, 0.35, 0.50, 0.86, 1.20, 1.50, 1.80, 2.00, 2.20, 2.50, 2.50, 2.00, 2.50],
-  'DJI': [0.00, 0.00, 0.01, 0.03, 0.08, 0.13, 0.20, 0.50, 1.00, 1.30, 2.70, 2.70, 2.80, 2.70, 3.60, 4.00],
-  'Fitbit': [0.00, 0.00, 0.00, 0.00, 0.00, 0.01, 0.14, 0.27, 0.75, 1.86, 2.17, 2.17, 1.51, 1.43, 1.43, 1.68],
-  'Peloton': [0.00, 0.00, 0.00, 0.01, 0.06, 0.17, 0.22, 0.44, 0.72, 1.83, 4.02, 3.58, 2.81],
-  'Anker': [0.00, 0.00, 0.00, 0.00, 0.02, 0.06, 0.11, 0.35, 0.66, 0.88, 1.20, 1.70, 1.38],
-  'Rivian': [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.21, 4.37],
-  'GoPro': [0.00, 0.00, 0.01, 0.03, 0.06, 0.24, 0.99, 1.39, 1.62, 1.18, 1.21, 0.89, 1.19],
-  
-  // Software/AI Companies (ARR to $500M milestone)
-  'Cursor': [0.00, 0.50],
-  'Anthropic': [0.00, 0.00, 1.40],
-  'Slack': [0.00, 0.00, 0.02, 0.34, 0.50],
-  'Uber': [0.00, 0.00, 0.05, 0.41, 0.45, 0.50],
-  'OpenAI': [0.00, 0.00, 0.00, 0.00, 0.03, 0.03, 0.50],
-  'Zoom': [0.00, 0.00, 0.01, 0.05, 0.08, 0.15, 0.23, 0.33, 0.50],
-  'Figma': [0.00, 0.00, 0.01, 0.02, 0.03, 0.06, 0.12, 0.20, 0.30, 0.50],
-  'DocuSign': [0.00, 0.00, 0.00, 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.11, 0.15, 0.20, 0.25, 0.32, 0.50],
-};
+const companyColors = useMemo(() => {
+  const colors = {};
+  const hardwareShades = ['#004d40', '#00695c', '#00796b', '#00897b', '#009688', '#26a69a', '#4db6ac', '#80cbc4', '#b2dfdb', '#e0f2f1'];
+  const softwareShades = ['#0d47a1', '#1565c0', '#1976d2', '#1e88e5', '#2196f3', '#42a5f5', '#64b5f6', '#90caf9', '#bbdefb', '#e3f2fd'];
+  hardwareCompanies.forEach((c, i) => { colors[c] = hardwareShades[i % hardwareShades.length]; });
+  softwareCompanies.forEach((c, i) => { colors[c] = softwareShades[i % softwareShades.length]; });
+  return colors;
+}, [hardwareCompanies, softwareCompanies]);
+const companyDashes = useMemo(() => {
+  const dashes = {};
+  hardwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
+  softwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
+  return dashes;
+}, [hardwareCompanies, softwareCompanies]);
 
-const companyColors = {
-  'Xiaomi': '#ff6f00',
-  'Block': '#00d924', 
-  'Tesla': '#e60012',
-  'Beats': '#666666',
-  'DJI': '#43a047',
-  'Fitbit': '#00b0ff',
-  'Peloton': '#ff5722',
-  'Anker': '#795548',
-  'Rivian': '#4caf50',
-  'GoPro': '#2196f3',
-  'Cursor': '#6366f1',
-  'Anthropic': '#f59e0b',
-  'Slack': '#4a154b',
-  'Uber': '#000000',
-  'OpenAI': '#412991',
-  'Zoom': '#2d8cff',
-  'Figma': '#f24e1e',
-  'DocuSign': '#ffb000'
+const renderCustomLabel = (props) => {
+  const { x, y, stroke, value, index, data } = props;
+  if (index === data.length - 1 && value) {
+    return <text x={x + 5} y={y} dy={-4} fill={stroke} fontSize={12} textAnchor='start'>{props.name}</text>;
+  }
+  return null;
 };
 
 const App = () => {
   const [visibleCompanies, setVisibleCompanies] = useState(() => {
     const initial = {};
-    Object.keys(companiesData).forEach(company => {
+    Object.keys(companyColors).forEach(company => {
       initial[company] = true;
     });
     return initial;
@@ -59,6 +38,34 @@ const App = () => {
   
   const [hoveredCompany, setHoveredCompany] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [companiesData, setCompaniesData] = useState({});
+  const [companyCategories, setCompanyCategories] = useState({});
+  const [isLogScale, setIsLogScale] = useState(false);
+
+  useEffect(() => {
+    Papa.parse('/company_revenue_data_detailed.csv', {
+      download: true,
+      header: true,
+      complete: (results) => {
+        const data = results.data;
+        const newData = {};
+        const newCategories = {};
+        data.forEach(row => {
+          if (row.Company) {
+            newCategories[row.Company] = row.Category;
+            const years = [];
+            for (let i = 0; i <= 15; i++) {
+              const val = parseFloat(row[`Year ${i}`]);
+              if (!isNaN(val)) years.push(val);
+            }
+            newData[row.Company] = years;
+          }
+        });
+        setCompaniesData(newData);
+        setCompanyCategories(newCategories);
+      }
+    });
+  }, []);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -83,7 +90,12 @@ const App = () => {
       });
       return yearData;
     });
-  }, []);
+  }, [companiesData]);
+
+  const hardwareCompanies = Object.keys(companiesData).filter(c => companyCategories[c] === 'Hardware');
+  const softwareCompanies = Object.keys(companiesData).filter(c => companyCategories[c] === 'Software/AI');
+  const hardwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(hardwareCompanies.map(c => [c, d[c]])) }));
+  const softwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(softwareCompanies.map(c => [c, d[c]])) }));
 
   const yAxisMax = useMemo(() => {
     const visibleData = Object.entries(companiesData)
@@ -94,7 +106,7 @@ const App = () => {
     
     const max = Math.max(...visibleData);
     return Math.ceil(max * 1.05);
-  }, [visibleCompanies]);
+  }, [visibleCompanies, companiesData]);
 
   const formatValue = (value) => {
     if (value >= 10) return `$${Math.round(value)}B`;
@@ -108,44 +120,35 @@ const App = () => {
     }));
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label, chartData }) => {
     if (active && payload && payload.length) {
-      const visiblePayload = payload.filter(entry => 
-        visibleCompanies[entry.dataKey] && 
-        entry.value !== undefined && 
-        entry.value !== null
-      );
-
+      const visiblePayload = payload.filter(entry => visibleCompanies[entry.dataKey] && entry.value !== undefined && entry.value !== null);
       if (visiblePayload.length === 0) return null;
-
+      const prevYearData = chartData[label - 1];
+      const sortedPayload = visiblePayload.sort((a, b) => b.value - a.value).map((entry, index) => {
+        const prevValue = prevYearData ? prevYearData[entry.dataKey] : 0;
+        const growth = prevValue ? ((entry.value - prevValue) / prevValue * 100).toFixed(1) : 'N/A';
+        return { ...entry, rank: index + 1, growth };
+      });
       return (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '12px',
-          border: '1px solid rgba(0,0,0,0.1)',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          fontFamily: 'Inter',
-          fontSize: isMobile ? '12px' : '13px'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#1a1a1a' }}>
-            Year {label}
-          </p>
-          {visiblePayload
-            .sort((a, b) => b.value - a.value)
-            .map((entry, index) => (
-              <p key={index} style={{ 
-                margin: '4px 0', 
-                color: entry.stroke,
-                fontWeight: hoveredCompany === entry.dataKey ? '600' : '400'
-              }}>
-                {entry.dataKey}: {formatValue(entry.value)}
-              </p>
-            ))}
+        <div style={{ backgroundColor: 'white', padding: '12px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontFamily: 'Inter', fontSize: isMobile ? '12px' : '13px' }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#1a1a1a' }}>Year {label}</p>
+          {sortedPayload.map((entry) => (
+            <p key={entry.dataKey} style={{ margin: '4px 0', color: entry.stroke, fontWeight: hoveredCompany === entry.dataKey ? '600' : '400' }}>
+              {entry.dataKey} (Rank {entry.rank}): {formatValue(entry.value)} {entry.growth !== 'N/A' ? `(${entry.growth}% YoY)` : ''}
+            </p>
+          ))}
         </div>
       );
     }
     return null;
+  };
+
+  const annotations = {
+    'Tesla': { year: 10, label: 'Model 3 Launch' },
+    'OpenAI': { year: 6, label: 'ChatGPT Release' },
+    'Uber': { year: 5, label: 'IPO' },
+    'Zoom': { year: 8, label: 'Pandemic Boom' },
   };
 
   // Mobile-responsive styles
@@ -218,7 +221,7 @@ const App = () => {
             gap: isMobile ? '8px' : '0',
             marginBottom: isMobile ? '8px' : '0'
           }}>
-            {['Xiaomi', 'Block', 'Tesla', 'Beats', 'DJI', 'Fitbit', 'Peloton', 'Anker', 'Rivian', 'GoPro'].map(company => (
+            {Object.keys(companyColors).map(company => (
               <div 
                 key={company} 
                 style={{ 
@@ -299,7 +302,7 @@ const App = () => {
             gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr',
             gap: isMobile ? '8px' : '0'
           }}>
-            {['Cursor', 'Anthropic', 'Slack', 'Uber', 'OpenAI', 'Zoom', 'Figma', 'DocuSign'].map(company => (
+            {Object.keys(companyColors).map(company => (
               <div 
                 key={company} 
                 style={{ 
@@ -366,49 +369,49 @@ const App = () => {
           <p style={{ fontFamily: 'Inter', marginBottom: '8px' }}><strong>Hardware:</strong> Annual Revenue data</p>
           <p style={{ fontFamily: 'Inter' }}><strong>Software/AI:</strong> Annual Recurring Revenue (ARR)</p>
         </div>
+        <div style={{ marginTop: '20px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+            <input type='checkbox' checked={isLogScale} onChange={() => setIsLogScale(!isLogScale)} style={{ marginRight: '8px' }} />
+            Logarithmic Scale
+          </label>
+        </div>
       </div>
 
       {/* Chart Section */}
-      <div style={chartSectionStyle}>
-        <h1 style={{ 
-          textAlign: 'center', 
-          marginBottom: isMobile ? '20px' : '30px', 
-          color: '#1a1a1a',
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: '600',
-          letterSpacing: '0.25px'
-        }}>
-          Company Growth Trajectories
-        </h1>
-        <div style={chartContainerStyle}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart 
-              data={chartData}
-              margin={chartMargins}
-              onMouseLeave={() => setHoveredCompany(null)}
-            >
-              {/* Background bands every 5 years */}
-              {[5, 10, 15].map(year => (
-                <ReferenceLine 
-                  key={year} 
-                  x={year} 
-                  stroke="rgba(0,0,0,0.02)" 
-                  strokeWidth={1}
-                  strokeDasharray="none"
-                />
-              ))}
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', height: isMobile ? '100vh' : '70vh' }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <h2 style={{ textAlign: 'center', fontSize: '16px', marginBottom: '10px' }}>Hardware (Annual Revenue)</h2>
+          <ResponsiveContainer width='100%' height='100%'>
+            <LineChart data={hardwareData} margin={chartMargins} onMouseLeave={() => setHoveredCompany(null)}>
+              {/* Remove reference lines */}
+              {/* Remove CartesianGrid */}
+              <XAxis dataKey='year' tickLine={false} axisLine={false} tick={{ fontSize: isMobile ? 12 : 14, fill: '#64748b', fontFamily: 'Inter' }} label={{ value: 'Years Since Founding', position: 'insideBottom', offset: -5, style: { fontSize: isMobile ? '12px' : '14px', fill: '#64748b', fontFamily: 'Inter' } }} />
+              <YAxis domain={isLogScale ? [0.01, yAxisMax] : [0, yAxisMax]} scale={isLogScale ? 'log' : 'auto'} tickLine={false} axisLine={false} tick={{ fontSize: isMobile ? 12 : 14, fill: '#64748b', fontFamily: 'Inter' }} tickFormatter={formatValue} label={{ value: 'Value (Billions USD)', angle: -90, position: 'insideLeft', style: { fontSize: isMobile ? '12px' : '14px', fill: '#64748b', fontFamily: 'Inter', textAnchor: 'middle' } }} />
+              <Tooltip content={<CustomTooltip chartData={hardwareData} />} />
               
-              <CartesianGrid 
-                strokeDasharray="2 2" 
-                stroke="rgba(0,0,0,0.1)"
-                vertical={false}
-              />
-              <XAxis 
-                dataKey="year" 
-                axisLine={{ stroke: '#e1e5e9', strokeWidth: 1 }}
-                tickLine={{ stroke: '#e1e5e9', strokeWidth: 1 }}
-                tick={{ fontSize: isMobile ? 12 : 14, fill: '#64748b', fontFamily: 'Inter' }}
-                label={{ 
+              {hardwareCompanies.map(company => visibleCompanies[company] && <Line key={company} type='monotone' dataKey={company} stroke={companyColors[company]} strokeWidth={hoveredCompany === company ? 3.5 : 2.5} dot={false} activeDot={{ r: isMobile ? 4 : 5, stroke: companyColors[company], strokeWidth: 2, fill: 'white' }} opacity={hoveredCompany && hoveredCompany !== company ? 0.3 : 1} style={{ transition: 'all 0.2s ease', filter: hoveredCompany === company ? `drop-shadow(0 0 6px ${companyColors[company]}40)` : 'none' }} strokeDasharray={companyDashes[company]}>
+                <LabelList content={renderCustomLabel} />
+              </Line>)}
+              {Object.entries(annotations).map(([company, {year, label}]) => {
+                if (visibleCompanies[company] && chartData[year] && chartData[year][company]) {
+                  return (
+                    <ReferenceDot key={company} x={year} y={chartData[year][company]} r={4} fill={companyColors[company]} stroke='none'>
+                      <Label value={label} position='top' offset={10} fontSize={10} fill='#666' />
+                    </ReferenceDot>
+                  );
+                }
+                return null;
+              })}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <h2 style={{ textAlign: 'center', fontSize: '16px', marginBottom: '10px' }}>Software/AI (ARR to $500M)</h2>
+          <ResponsiveContainer width='100%' height='100%'>
+            <LineChart data={softwareData} margin={chartMargins} onMouseLeave={() => setHoveredCompany(null)}>
+              {/* Remove reference lines */}
+              {/* Remove CartesianGrid */}
+              <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: isMobile ? 12 : 14, fill: '#64748b', fontFamily: 'Inter' }} label={{ 
                   value: 'Years Since Founding', 
                   position: 'insideBottom', 
                   offset: -5,
@@ -416,9 +419,10 @@ const App = () => {
                 }}
               />
               <YAxis 
-                domain={[0, yAxisMax]}
-                axisLine={{ stroke: '#e1e5e9', strokeWidth: 1 }}
-                tickLine={{ stroke: '#e1e5e9', strokeWidth: 1 }}
+                domain={isLogScale ? [0.01, yAxisMax] : [0, yAxisMax]}
+                scale={isLogScale ? 'log' : 'auto'}
+                tickLine={false}
+                axisLine={false}
                 tick={{ fontSize: isMobile ? 12 : 14, fill: '#64748b', fontFamily: 'Inter' }}
                 tickFormatter={formatValue}
                 label={{ 
@@ -428,31 +432,21 @@ const App = () => {
                   style: { fontSize: isMobile ? '12px' : '14px', fill: '#64748b', fontFamily: 'Inter', textAnchor: 'middle' }
                 }}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip chartData={softwareData} />} />
               
-              {Object.keys(companiesData).map(company => (
-                visibleCompanies[company] && (
-                  <Line
-                    key={company}
-                    type="monotone"
-                    dataKey={company}
-                    stroke={companyColors[company]}
-                    strokeWidth={hoveredCompany === company ? 3.5 : 2.5}
-                    dot={false}
-                    activeDot={{ 
-                      r: isMobile ? 4 : 5, 
-                      stroke: companyColors[company], 
-                      strokeWidth: 2, 
-                      fill: 'white' 
-                    }}
-                    opacity={hoveredCompany && hoveredCompany !== company ? 0.3 : 1}
-                    style={{ 
-                      transition: 'all 0.2s ease',
-                      filter: hoveredCompany === company ? `drop-shadow(0 0 6px ${companyColors[company]}40)` : 'none'
-                    }}
-                  />
-                )
-              ))}
+              {softwareCompanies.map(company => visibleCompanies[company] && <Line key={company} type='monotone' dataKey={company} stroke={companyColors[company]} strokeWidth={hoveredCompany === company ? 3.5 : 2.5} dot={false} activeDot={{ r: isMobile ? 4 : 5, stroke: companyColors[company], strokeWidth: 2, fill: 'white' }} opacity={hoveredCompany && hoveredCompany !== company ? 0.3 : 1} style={{ transition: 'all 0.2s ease', filter: hoveredCompany === company ? `drop-shadow(0 0 6px ${companyColors[company]}40)` : 'none' }} strokeDasharray={companyDashes[company]}>
+                <LabelList content={renderCustomLabel} />
+              </Line>)}
+              {Object.entries(annotations).map(([company, {year, label}]) => {
+                if (visibleCompanies[company] && chartData[year] && chartData[year][company]) {
+                  return (
+                    <ReferenceDot key={company} x={year} y={chartData[year][company]} r={4} fill={companyColors[company]} stroke='none'>
+                      <Label value={label} position='top' offset={10} fontSize={10} fill='#666' />
+                    </ReferenceDot>
+                  );
+                }
+                return null;
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
