@@ -4,23 +4,9 @@ import Papa from 'papaparse';
 
 // Interactive Company Growth Chart - Live on GitHub Pages
 // Company data - year by year values in billions USD
-const companyColors = useMemo(() => {
-  const colors = {};
-  const hardwareShades = ['#004d40', '#00695c', '#00796b', '#00897b', '#009688', '#26a69a', '#4db6ac', '#80cbc4', '#b2dfdb', '#e0f2f1'];
-  const softwareShades = ['#0d47a1', '#1565c0', '#1976d2', '#1e88e5', '#2196f3', '#42a5f5', '#64b5f6', '#90caf9', '#bbdefb', '#e3f2fd'];
-  hardwareCompanies.forEach((c, i) => { colors[c] = hardwareShades[i % hardwareShades.length]; });
-  softwareCompanies.forEach((c, i) => { colors[c] = softwareShades[i % softwareShades.length]; });
-  return colors;
-}, [hardwareCompanies, softwareCompanies]);
-const companyDashes = useMemo(() => {
-  const dashes = {};
-  hardwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
-  softwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
-  return dashes;
-}, [hardwareCompanies, softwareCompanies]);
-
 const renderCustomLabel = (props) => {
   const { x, y, stroke, value, index, data } = props;
+  if (!data || !data.length) return null;
   if (index === data.length - 1 && value) {
     return <text x={x + 5} y={y} dy={-4} fill={stroke} fontSize={12} textAnchor='start'>{props.name}</text>;
   }
@@ -28,13 +14,7 @@ const renderCustomLabel = (props) => {
 };
 
 const App = () => {
-  const [visibleCompanies, setVisibleCompanies] = useState(() => {
-    const initial = {};
-    Object.keys(companyColors).forEach(company => {
-      initial[company] = true;
-    });
-    return initial;
-  });
+  const [visibleCompanies, setVisibleCompanies] = useState({});
   
   const [hoveredCompany, setHoveredCompany] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -80,6 +60,16 @@ const App = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    if (Object.keys(visibleCompanies).length === 0 && Object.keys(companiesData).length > 0) {
+      const initial = {};
+      Object.keys(companiesData).forEach(company => {
+        initial[company] = true;
+      });
+      setVisibleCompanies(initial);
+    }
+  }, [companiesData]);
+
   const chartData = useMemo(() => {
     const maxLength = Math.max(...Object.values(companiesData).map(data => data.length));
     
@@ -94,8 +84,23 @@ const App = () => {
     });
   }, [companiesData]);
 
-  const hardwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Hardware'), [companiesData, companyCategories]);
-  const softwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Software/AI'), [companiesData, companyCategories]);
+  const hardwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Hardware') || [], [companiesData, companyCategories]);
+  const softwareCompanies = useMemo(() => Object.keys(companiesData).filter(c => companyCategories[c] === 'Software/AI') || [], [companiesData, companyCategories]);
+  const companyColors = useMemo(() => {
+    const colors = {};
+    const hardwareShades = ['#004d40', '#00695c', '#00796b', '#00897b', '#009688', '#26a69a', '#4db6ac', '#80cbc4', '#b2dfdb', '#e0f2f1'];
+    const softwareShades = ['#0d47a1', '#1565c0', '#1976d2', '#1e88e5', '#2196f3', '#42a5f5', '#64b5f6', '#90caf9', '#bbdefb', '#e3f2fd'];
+    hardwareCompanies.forEach((c, i) => { colors[c] = hardwareShades[i % hardwareShades.length]; });
+    softwareCompanies.forEach((c, i) => { colors[c] = softwareShades[i % softwareShades.length]; });
+    return colors;
+  }, [hardwareCompanies, softwareCompanies]);
+  const companyDashes = useMemo(() => {
+    const dashes = {};
+    hardwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
+    softwareCompanies.forEach((c, i) => { dashes[c] = i % 2 === 0 ? 'none' : '3 3'; });
+    return dashes;
+  }, [hardwareCompanies, softwareCompanies]);
+
   const hardwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(hardwareCompanies.map(c => [c, d[c]])) }));
   const softwareData = chartData.map(d => ({ year: d.year, ...Object.fromEntries(softwareCompanies.map(c => [c, d[c]])) }));
 
@@ -225,7 +230,7 @@ const App = () => {
             gap: isMobile ? '8px' : '0',
             marginBottom: isMobile ? '8px' : '0'
           }}>
-            {Object.keys(companyColors).map(company => (
+            {hardwareCompanies.map(company => (
               <div 
                 key={company} 
                 style={{ 
@@ -306,7 +311,7 @@ const App = () => {
             gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr',
             gap: isMobile ? '8px' : '0'
           }}>
-            {Object.keys(companyColors).map(company => (
+            {softwareCompanies.map(company => (
               <div 
                 key={company} 
                 style={{ 
