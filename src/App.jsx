@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, ReferenceDot, Label } from 'recharts';
 import Papa from 'papaparse';
+import csvData from '../company_revenue_data_detailed.csv?raw';
 
 // Interactive Company Growth Chart - Live on GitHub Pages
 // Company data - year by year values in billions USD
@@ -24,38 +25,29 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Papa.parse('/company_revenue_data_detailed.csv', {
-      download: true,
-      header: true,
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          console.error('CSV parsing errors:', results.errors);
-          setIsLoading(false);
-          return;
+    const results = Papa.parse(csvData, { header: true });
+    if (results.errors.length > 0) {
+      console.error('CSV parsing errors:', results.errors);
+      setIsLoading(false);
+      return;
+    }
+    const data = results.data;
+    const newData = {};
+    const newCategories = {};
+    data.forEach(row => {
+      if (row.Company) {
+        newCategories[row.Company] = row.Category;
+        const years = [];
+        for (let i = 0; i <= 15; i++) {
+          const val = parseFloat(row[`Year ${i}`]);
+          if (!isNaN(val)) years.push(val);
         }
-        const data = results.data;
-        const newData = {};
-        const newCategories = {};
-        data.forEach(row => {
-          if (row.Company) {
-            newCategories[row.Company] = row.Category;
-            const years = [];
-            for (let i = 0; i <= 15; i++) {
-              const val = parseFloat(row[`Year ${i}`]);
-              if (!isNaN(val)) years.push(val);
-            }
-            newData[row.Company] = years;
-          }
-        });
-        setCompaniesData(newData);
-        setCompanyCategories(newCategories);
-        setIsLoading(false);
-      },
-      error: (error) => {
-        console.error('PapaParse error:', error);
-        setIsLoading(false);
+        newData[row.Company] = years;
       }
     });
+    setCompaniesData(newData);
+    setCompanyCategories(newCategories);
+    setIsLoading(false);
   }, []);
 
   // Detect mobile screen size
