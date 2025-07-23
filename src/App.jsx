@@ -169,34 +169,10 @@ const App = () => {
     position: 'relative'
   };
 
-  const chartSectionStyle = {
-    flex: 1,
-    padding: isMobile ? '15px' : '20px',
-    order: isMobile ? 2 : 1
-  };
-
-  const chartContainerStyle = {
-    height: isMobile ? '50vh' : '70vh',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    padding: isMobile ? '15px' : '20px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-  };
-
-  const sidebarStyle = {
-    width: isMobile ? '100%' : '300px',
-    padding: isMobile ? '15px' : '20px',
-    backgroundColor: 'white',
-    borderLeft: isMobile ? 'none' : '1px solid #e1e5e9',
-    borderBottom: isMobile ? '1px solid #e1e5e9' : 'none',
-    overflowY: 'auto',
-    order: isMobile ? 1 : 2,
-    maxHeight: isMobile ? '40vh' : 'none'
-  };
-
-  const chartMargins = isMobile 
-    ? { top: 20, right: 15, left: 50, bottom: 60 }
-    : { top: 20, right: 30, left: 70, bottom: 80 };
+  const chartSectionStyle = { flex: isMobile ? 1 : 3, padding: isMobile ? '15px' : '20px', order: isMobile ? 2 : 1 };
+  const sidebarStyle = { width: isMobile ? '100%' : '250px', padding: isMobile ? '15px' : '20px', backgroundColor: 'white', borderLeft: isMobile ? 'none' : '1px solid #e1e5e9', borderBottom: isMobile ? '1px solid #e1e5e9' : 'none', overflowY: 'auto', order: isMobile ? 1 : 2, maxHeight: isMobile ? '40vh' : 'none' };
+  const chartContainerStyle = { height: isMobile ? '50vh' : '80vh', backgroundColor: 'white', borderRadius: '8px', padding: isMobile ? '15px' : '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' };
+  const chartMargins = isMobile ? { top: 20, right: 15, left: 40, bottom: 60 } : { top: 20, right: 20, left: 50, bottom: 80 };
 
   if (isLoading) return <div>Loading data... (If this persists, check console for errors)</div>;
 
@@ -388,8 +364,8 @@ const App = () => {
       </div>
 
       {/* Chart Section */}
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', height: isMobile ? '100vh' : '70vh' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', height: isMobile ? '100vh' : '80vh' }}>
+        <div style={{ flex: 1, position: 'relative', minWidth: '300px' }}>
           <h2 style={{ textAlign: 'center', fontSize: '16px', marginBottom: '10px' }}>Hardware (Annual Revenue)</h2>
           <ResponsiveContainer width='100%' height='100%'>
             <LineChart data={hardwareData} margin={chartMargins} onMouseLeave={() => setHoveredCompany(null)}>
@@ -415,7 +391,7 @@ const App = () => {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ flex: 1, position: 'relative', minWidth: '300px' }}>
           <h2 style={{ textAlign: 'center', fontSize: '16px', marginBottom: '10px' }}>Software/AI (ARR to $500M)</h2>
           <ResponsiveContainer width='100%' height='100%'>
             <LineChart data={softwareData} margin={chartMargins} onMouseLeave={() => setHoveredCompany(null)}>
